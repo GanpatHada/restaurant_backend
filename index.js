@@ -3,6 +3,7 @@ const Restaurant = require("./models/Restaurant");
 const User = require("./models/User");
 const express = require("express");
 const app = express();
+const PORT = process.env.PORT || 3000;
 app.use(express.json());
 const {
   createRestaurant,
@@ -72,6 +73,10 @@ async function getUserReviews(restaurantId) {
 }
 // getUserReviews("6654b82f6072b6cf724b4408");
 
+app.get("/", (req, res) => {
+  res.send("welcome to express");
+});
+
 app.post("/restaurants", (req, res) => {
   try {
     const restaurantData = req.body;
@@ -82,6 +87,6 @@ app.post("/restaurants", (req, res) => {
   }
 });
 
-app.listen(3000, () => {
+app.listen(PORT, () => {
   console.log("server started");
 });

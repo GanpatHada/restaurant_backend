@@ -12,9 +12,8 @@ async function createRestaurant(restaurantData) {
 
 async function getRestaurantByName(restaurantName) {
   try {
-    const foundRestaurant = await Restaurant.findOne({ name: restaurantName });
-    if (foundRestaurant) console.log(foundRestaurant);
-    else console.log("Restaurant not found");
+    const foundRestaurant = await Restaurant.find({ name: restaurantName });
+    return foundRestaurant;
   } catch (e) {
     throw e;
   }
@@ -23,7 +22,7 @@ async function getRestaurantByName(restaurantName) {
 async function getAllRestaraunts() {
   try {
     const allResturants = await Restaurant.find();
-    console.log(allResturants);
+    return allResturants;
   } catch (e) {
     throw e;
   }
@@ -31,26 +30,23 @@ async function getAllRestaraunts() {
 
 async function getRestaurantByCuisine(cuisine) {
   try {
-    const foundRestaurant = await Restaurant.find({ cuisine: cuisine });
-    if (foundRestaurant.length > 0) {
-      console.log(foundRestaurant);
-    } else {
-      console.log("Restaurant not found");
-    }
+    const foundRestaurant = await Restaurant.find({
+      cuisine: new RegExp(cuisine, "i"),
+    });
+    return foundRestaurant;
   } catch (e) {
     throw e;
   }
 }
 async function updateRestaurant(restaurantId, updatedData) {
   try {
-    const foundRestaurant = await Restaurant.findByIdAndUpdate(
+    const updatedRestaurant = await Restaurant.findByIdAndUpdate(
       restaurantId,
       updatedData,
       { new: true },
     );
-    if (foundRestaurant) {
-      console.log(foundRestaurant);
-    } else console.log("Restaurant not found");
+    console.log(updatedRestaurant);
+    return updatedRestaurant;
   } catch (e) {
     throw e;
   }
@@ -69,9 +65,10 @@ async function deleteRestaurant(restaurantId) {
 
 async function getRestaurantByLocation(city) {
   try {
-    const foundRestaurants = await Restaurant.find({ city: city });
-    if (foundRestaurants.length > 0) console.log(foundRestaurants);
-    else console.log("no restaurant found");
+    const foundRestaurants = await Restaurant.find({
+      city: new RegExp(city, "i"),
+    });
+    return foundRestaurants;
   } catch (error) {
     throw error;
   }
@@ -82,11 +79,7 @@ async function filterRestaurantsByRating(rating) {
     const foundRestaurants = await Restaurant.find({
       rating: { $gte: rating },
     });
-    if (foundRestaurants.length > 0) {
-      console.log(foundRestaurants);
-    } else {
-      console.log("no restaurant found");
-    }
+    return foundRestaurants;
   } catch (error) {
     throw error;
   }
@@ -106,4 +99,14 @@ async function addDishToMenu(restaurantId, dish) {
     throw e;
   }
 }
-module.exports = { createRestaurant, getRestaurantByName };
+module.exports = {
+  createRestaurant,
+  getRestaurantByName,
+  getAllRestaraunts,
+  getRestaurantByCuisine,
+  updateRestaurant,
+  deleteRestaurant,
+  getRestaurantByLocation,
+  filterRestaurantsByRating,
+  addDishToMenu,
+};

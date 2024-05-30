@@ -92,6 +92,7 @@ async function addDishToMenu(restaurantId, dish) {
       foundRestaurant.menu.push(dish);
       await foundRestaurant.save();
       console.log(foundRestaurant);
+      return foundRestaurant;
     } else {
       console.log("Restaurant not found");
     }
@@ -99,6 +100,9 @@ async function addDishToMenu(restaurantId, dish) {
     throw e;
   }
 }
+
+
+
 module.exports = {
   createRestaurant,
   getRestaurantByName,

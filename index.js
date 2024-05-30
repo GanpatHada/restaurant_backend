@@ -1,13 +1,13 @@
 require("./db");
-const Restaurant = require("./models/Restaurant");
-const User = require("./models/User");
 const restaurantRouter = require("./routers/Restaurant.router");
 const express = require("express");
+const helmet = require("helmet");
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/restaurants", restaurantRouter);
+app.use(helmet());
 
 const {
   createRestaurant,
@@ -18,59 +18,63 @@ const {
   deleteRestaurant,
   getRestaurantByLocation,
   filterRestaurantsByRating,
+  addDishToMenu,
 } = require("./services/restaurantService");
 
-async function createUser(userData) {
-  try {
-    const user = new User(userData);
-    const savedUser = await user.save();
-    console.log("User added", savedUser);
-  } catch (e) {
-    throw e;
-  }
-}
+const {
+  createUser,
+  addRestaurantReviewAndRating,
+  getUserReviews,
+} = require("./services/userService");
 
-async function addRestaurantReviewAndRating(restaurantId, review) {
+restaurantRouter.post("/:restaurantId/menu", async (req, res) => {
   try {
-    const foundRestaurent = await Restaurant.findById(restaurantId);
-    if (foundRestaurent) {
-      foundRestaurent.reviews.push(review);
-      foundRestaurent.averageRating =
-        foundRestaurent.reviews.reduce((acc, curr) => acc + curr.ratings, 0) /
-        foundRestaurent.reviews.length;
-      await foundRestaurent.save();
-      console.log(foundRestaurent);
-    }
+    const restaurantId = req.params.restaurantId;
+    const updatedRestaurant = await addDishToMenu(restaurantId, req.body);
+    res.status(200).json(updatedRestaurant);
   } catch (e) {
-    throw e;
-  }
-}
-// addRestaurantReviewAndRating("6654b82f6072b6cf724b4408", {
-//   userId: "6655611a96ba3d939a20d34d",
-//   review: "nice place for foodie",
-//   ratings: 5,
-// });
-
-// createUser({ userName: "Harry", profilePicture: "wwww.profile.com" });
-
-async function getUserReviews(restaurantId) {
-  try {
-    const foundRestaurantReviews = await Restaurant.findById(restaurantId);
-    console.log(foundRestaurantReviews.reviews);
-  } catch (e) {
-    throw e;
-  }
-}
-// getUserReviews("6654b82f6072b6cf724b4408");
-restaurantRouter.get("/", async (req, res) => {
-  try {
-    const allRestaurants = await getAllRestaraunts();
-    res.json(allRestaurants);
-  } catch (e) {
-    res.status(500).json({ error: "failed to get restaurants" });
+    res.status(500).json({ error: "Failed to fetch restaurant" });
+    console.log(e);
   }
 });
 
+restaurantRouter.post("/:restaurantId/reviews", async (req, res) => {
+  try {
+    const restaurantId = req.params.restaurantId;
+    const review = req.body;
+    const updatedRestaurant = await addRestaurantReviewAndRating(
+      restaurantId,
+      review,
+    );
+    res.status(200).json({
+      message: "review added successfully",
+      restaurant: updatedRestaurant,
+    });
+  } catch (e) {
+    res.status(500).json({ error: "failed to add review" });
+  }
+});
+
+restaurantRouter.post("/:restaurantId", async (req, res) => {
+  try {
+    const restaurantId = req.params.restaurantId;
+    const updatedRestaurant = await updateRestaurant(restaurantId, req.body);
+    console.log(req.body);
+    res.status(200).json(updatedRestaurant);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch restaurant" });
+    throw e;
+  }
+});
+restaurantRouter.post("/", async (req, res) => {
+  try {
+    const restaurantData = req.body;
+    await createRestaurant(restaurantData);
+    res.status(201).json({ message: "Restaurant added successfully" });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to add restaurant" });
+  }
+});
 restaurantRouter.get("/search", async (req, res) => {
   try {
     const location = req.query.location;
@@ -80,6 +84,16 @@ restaurantRouter.get("/search", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch restaurants" });
   }
 
+  restaurantRouter.get("/:restaurantId/reviews", async (req, res) => {
+    try {
+      const restaurantId = req.params.restaurantId;
+      const restaurantReviews = await getUserReviews(restaurantId);
+      res.status(200).json({ reviews: restaurantReviews });
+    } catch (e) {
+      res.status(500).json({ error: "failed to fetch reviews" });
+    }
+  });
+
   restaurantRouter.get("/:name", async (req, res) => {
     try {
       const restaurantName = req.params.name;
@@ -88,6 +102,15 @@ restaurantRouter.get("/search", async (req, res) => {
     } catch (e) {
       res.status(500).json({ error: "Failed to fetch restaurant" });
       console.log(e);
+    }
+  });
+
+  restaurantRouter.get("/", async (req, res) => {
+    try {
+      const allRestaurants = await getAllRestaraunts();
+      res.json(allRestaurants);
+    } catch (e) {
+      res.status(500).json({ error: "failed to get restaurants" });
     }
   });
 
@@ -112,28 +135,6 @@ restaurantRouter.get("/search", async (req, res) => {
     }
   });
 
-  restaurantRouter.post("/", async (req, res) => {
-    try {
-      const restaurantData = req.body;
-      await createRestaurant(restaurantData);
-      res.status(201).json({ message: "Restaurant added successfully" });
-    } catch (e) {
-      res.status(500).json({ error: "Failed to add restaurant" });
-    }
-  });
-
-  restaurantRouter.post("/:restaurantId", async (req, res) => {
-    try {
-      const restaurantId = req.params.restaurantId;
-      const updatedRestaurant = await updateRestaurant(restaurantId, req.body);
-      console.log(req.body);
-      res.status(200).json(updatedRestaurant);
-    } catch (e) {
-      res.status(500).json({ error: "Failed to fetch restaurant" });
-      console.log(e);
-    }
-  });
-
   restaurantRouter.delete("/:restaurantId", async (req, res) => {
     try {
       const restaurantId = req.params.restaurantId;
@@ -145,10 +146,21 @@ restaurantRouter.get("/search", async (req, res) => {
   });
 });
 
+app.post("/createUser", async (req, res) => {
+  try {
+    const userData = req.body;
+    const user = await createUser(userData);
+    res.status(200).json(user);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to create user" });
+    console.log(e);
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("welcome to express");
 });
 
 app.listen(PORT, () => {
-  console.log("server started");
+  console.log("server started at " + PORT);
 });

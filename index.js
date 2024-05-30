@@ -3,11 +3,13 @@ const restaurantRouter = require("./routers/Restaurant.router");
 const express = require("express");
 const helmet = require("helmet");
 const app = express();
+const cors = require("cors");
 const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/restaurants", restaurantRouter);
 app.use(helmet());
+app.use(cors());
 
 const {
   createRestaurant,
@@ -75,44 +77,14 @@ restaurantRouter.post("/", async (req, res) => {
     res.status(500).json({ error: "Failed to add restaurant" });
   }
 });
-restaurantRouter.get("/search", async (req, res) => {
+restaurantRouter.get("/", async (req, res) => {
   try {
-    const location = req.query.location;
-    const restaurants = await getRestaurantByLocation(location);
-    res.status(200).json({ messageOFLoc: "Restaurants found", restaurants });
+    const allRestaurants = await getAllRestaraunts();
+    res.json(allRestaurants);
   } catch (e) {
-    res.status(500).json({ error: "Failed to fetch restaurants" });
+    res.status(500).json({ error: "failed to get restaurants" });
   }
-
-  restaurantRouter.get("/:restaurantId/reviews", async (req, res) => {
-    try {
-      const restaurantId = req.params.restaurantId;
-      const restaurantReviews = await getUserReviews(restaurantId);
-      res.status(200).json({ reviews: restaurantReviews });
-    } catch (e) {
-      res.status(500).json({ error: "failed to fetch reviews" });
-    }
-  });
-
-  restaurantRouter.get("/:name", async (req, res) => {
-    try {
-      const restaurantName = req.params.name;
-      const restaurantsList = await getRestaurantByName(restaurantName);
-      res.status(200).json({ message: restaurantsList });
-    } catch (e) {
-      res.status(500).json({ error: "Failed to fetch restaurant" });
-      console.log(e);
-    }
-  });
-
-  restaurantRouter.get("/", async (req, res) => {
-    try {
-      const allRestaurants = await getAllRestaraunts();
-      res.json(allRestaurants);
-    } catch (e) {
-      res.status(500).json({ error: "failed to get restaurants" });
-    }
-  });
+});
 
   restaurantRouter.get("/rating/:rating", async (req, res) => {
     try {
@@ -131,6 +103,36 @@ restaurantRouter.get("/search", async (req, res) => {
       res.json(restaurantList);
     } catch (e) {
       res.status(500).json({ error: "failed to get restaurant" });
+      console.log(e);
+    }
+  });
+  restaurantRouter.get("/:restaurantId/reviews", async (req, res) => {
+    try {
+      const restaurantId = req.params.restaurantId;
+      const restaurantReviews = await getUserReviews(restaurantId);
+      res.status(200).json({ reviews: restaurantReviews });
+    } catch (e) {
+      res.status(500).json({ error: "failed to fetch reviews" });
+    }
+  });
+
+restaurantRouter.get("/search", async (req, res) => {
+  try {
+    const location = req.query.location;
+    const restaurants = await getRestaurantByLocation(location);
+    res.status(200).json({ messageOFLoc: "Restaurants found", restaurants });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch restaurants" });
+  }
+  restaurantRouter.get("/:name", async (req, res) => {
+    try {
+      const restaurantName = req.params.name;
+      const restaurantsList = await getRestaurantByName(restaurantName);
+      res
+        .status(200)
+        .json({ message: "restaurant found", restaurant: restaurantsList });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to fetch restaurant" });
       console.log(e);
     }
   });
